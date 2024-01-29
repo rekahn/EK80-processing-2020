@@ -1,0 +1,324 @@
+
+             Lavery EK80 Data Processing
+
+
+This folder is software for EK80 software version 2.  2020
+The structures below might have changed., but running is the same.
+
+
+Files modified for 2020 version
+	
+	EK80_init.m
+	EK80_read_proc_data.m
+	EK80_readRawFiles.m
+
+New routines
+
+	EK80ReadRawV4.m
+	parsePingSequencexmlstruct.m
+	parseSensorxmlstruct.m
+	parseInitalParameterxmlstruct.m
+
+
+
+
+
+----------------------------------------------------------------
+
+
+ 
+
+Data and processing for ek80 (pole mounted)   V2  
+
+
+     2-4 transducers
+          
+         70 kHz FM splitbeam 4 quadrants (transducers)
+        120 kHz FM splitbeam 4 quadrants (transducers)
+  
+        200 kHz 
+        333 kHz
+
+  
+------------------------------------------------------------------------------
+
+Matlab routine   
+
+    EK80_main.m  shows order of matlab programs to run. Run the
+        main routine for doing processing.  Run individual routines
+        if you understand the order and what each does.
+       
+
+    1) Initialize workspace
+
+        EK80_init.m
+
+
+        sets up directory structure
+        makes output folders
+        sets up number of parallel workers
+                0 workers means do not run in parallel
+                Will default to local pool
+
+                
+
+    2) Start parallel pool
+        
+            Pool = Start_parallel(Num_parallel_workers);
+
+            Num_parallel_workers is set in init file
+            if Num_parallel_workers argument is missing, defaults to local pool config
+            0 workers - run in serial
+            Processing in parallel speeds things up, 
+                Run serial for smaller jobs to get more info on screen
+
+
+
+
+     3) To read, pulse compress FM signals, and save all signals, run
+
+            EK80_read_proc_data.m       To run in serial ONLY
+
+            EK80_read_proc_data_par.m     Runs in either mode (depends on num_workers)
+
+
+
+            Matlab files for reading, pulse compressing, and saving data are in
+    
+                EK80                EK80 utility routines
+                EK80_software       EK80 general routines
+                extras              Miscellaneous routines
+
+     
+            output is sent to folders specified in the init file 
+
+                MatOutFile  contains matlab files
+                        one matlab file for each frequency that was pulse compressed
+                        data file that contains meta data and raw data
+
+
+        4) Optional:  plotting routines which are dependent on project
+                
+                        dB ranges change, caxis changes, ...
+
+                    Plot_processed_files_GUI_select.m  plots selected files from GUI
+                
+                    Plot_processed_files_all.m plots all frequency files.
+
+                    output is saved in variable PlotOutDir  set in init file
+
+        5) Optional:   plotting routine for charting and tracks
+
+                    Check if GPS data is available
+                    Will save kml files for input to google earth
+                        must have ge toolbox downloaded from mathworks
+    
+                    Plot_LatLons.m
+
+                    
+
+------------------------------------------------------------------------------
+Sample data variable structure format
+
+For 5 transducers (channels)
+
+> data  
+  
+
+  struct with fields:
+
+      echodata: [5×38 struct]
+       filters: [5×2 cFilter1Data]
+        config: [1×1 struct]
+       environ: [1×1 struct]
+          nmea: [1×391 cNMEA]
+         param: [5×38 struct]
+    channelMap: [5×1 containers.Map]
+           mru: [1×38 struct]
+    channelIDs: [5×1 containers.Map]
+       version: 'V3'
+    parameters: [1×1 struct]
+
+        > data.echodata
+            channel×npings struct array with fields:
+            timestamp
+            channelID
+            datatype
+            spare
+            offset
+            count
+            complexsamples    % Original complex samples - each channel
+            minCount
+            maxCount
+            minRange
+            maxRange
+            dR
+            compressed:       % pulse compressed for each channel
+            range:            % calculated ranges according to freq
+
+        > data.filters
+    
+            5×2 cFilter1Data array with properties:
+            Stage
+            channel
+            ChannelID
+            Decimation
+            FilterData
+
+        > data.config
+ 
+            struct with fields:
+            header: [1×1 struct]
+            transceivers: [1×5 struct]
+
+                > data.config.header
+  
+                    struct with fields:
+                    ApplicationName: 'EK80'
+                    Copyright: 'Copyright(c) Kongsberg Maritime AS, Norway'
+                    FileFormatVersion: '1.20'
+                    TimeBias: '0'
+                    Version: '1.10.2.0'
+            
+                > data.config.transceivers
+
+                    1x5 struct array with fields:
+                    id
+                    EthernetAddress
+                    IPAddress
+                    Impedance
+                    MarketSegment
+                    SerialNumber
+                    TransceiverName
+                    TransceiverNumber
+                    TransceiverSoftwareVersion
+                    TransceiverType
+                    Version
+                    channels
+
+        > data.environ
+
+            struct with fields:
+            Acidity: 8
+            Depth: 2000
+            DropKeelOffset: 0
+            DropKeelOffsetIsManual: 0
+            Latitude: 45
+            Salinity: 32
+            SoundSpeed: 1480
+            SoundVelocityProfile: NaN
+            SoundVelocitySource: NaN
+            Temperature: 15.3000
+            WaterLevelDraft: -2.6000
+            WaterLevelDraftIsManual: 1
+            timestamp: 7.3679e+05
+
+        > data.nmea
+ 
+            1×391 cNMEA array with properties:
+
+            text
+            timestamp
+
+        > data.param
+
+            5×38 struct array with fields:
+            ChannelID
+            ChannelMode
+            FrequencyEnd
+            FrequencyStart
+            PulseDuration
+            PulseForm
+            SampleInterval
+            Slope
+            TransmitPower
+            timestamp
+
+         > data.channelMap
+
+            Map with properties:
+            Count: 5
+            KeyType: char
+            ValueType: any
+
+        > data.mru
+ 
+            1×38 struct array with fields:
+            heave
+            roll
+            pitch
+            heading
+
+         > data.channelIDs
+ 
+            Map with properties:
+            Count: 5
+            KeyType: int32
+            ValueType: char
+    
+        > data.parameters
+ 
+            struct with fields:
+            fs: 1500000
+            Rwbtrx: 1000
+            Ztrd: 75
+            rawfilename: '/..../Filename.raw'
+            filename: 'Filename.raw'
+
+
+OUTPUT
+
+    Data file  (same name as input file with .mat)
+    files for each channel pulse compressed
+
+    Data file contains same struct as input, ie
+
+    data = 
+
+        struct with fields:
+
+            echodata: [ struct]
+             filters: [ cFilter1Data]
+              config: [ struct]
+             environ: [ struct]
+                nmea: [ cNMEA]
+               param: [ struct]
+          channelMap: [ containers.Map]
+                 mru: [ struct]
+          channelIDs: [ containers.Map]
+             version: 'V3'
+          parameters: [ struct]
+
+   Pulse compressed files (named with each frequency), and
+    averaged over their number of beams, ie
+
+        signal = load ('JamesRiverCal_passive-D20181107-T162242_5-15 ES70-7CD')
+
+        signal = 
+
+        struct with fields:
+
+                    ChannelID: 'WBT Tube 247715-15 ES70-7CD'
+            CompressedVoltage: [16762×20 double]
+                 ComputerTime: [1×20 double]
+                      FreqEnd: 90000
+                    FreqStart: 45000
+                      GPStime: []
+                          Lat: []
+                          Lon: []
+                       Npings: 20
+                        Range: [16762×1 double]
+                      Voltage: [16762×20 double]
+
+     
+
+
+Modifications/problems
+
+6/2019   program crashing due to partial files when a new sensor wasn't previously
+            entered into the 'channels' Map (hash list).
+        fix:  check for Key, if missing, return empty data, then move on to next file.
+
+
+
+

@@ -1,0 +1,28 @@
+% Parse Sensor XML data to a Parameter Matlab structure
+%
+%  New 7/2020
+%
+% xmldata = 
+ 
+
+
+
+function paramdata = parseSensorxmlstruct(xmldata)
+
+xmldata
+
+ 
+%     
+%     nattributes = length(xmldata.Attributes);
+%     
+%     
+%     for j = 1:nattributes
+%         name = xmldata.Children.Children.Attributes(j).Name;
+%         paramdata.(name) = xmldata.Children.Children.Attributes(j).Value;
+%         if ~strcmp(xmldata.Children.Attributes(j).Name, 'ChannelID')
+%             paramdata.(name) = str2double(paramdata.(name));
+%         end
+%         
+ 
+    
+end   % if
